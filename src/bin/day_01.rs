@@ -1,5 +1,4 @@
-#![allow(dead_code)]
-
+#[allow(dead_code)]
 fn parse_line_part_01( line: &str ) -> u32
 {
     let deca_digit = | c: &char | -> bool { c.is_digit( 10 ) };
