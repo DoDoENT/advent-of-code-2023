@@ -108,28 +108,28 @@ impl PuzzleInput< '_ >
 
         let mut current_line = lines.next();
 
-        while current_line.is_some()
+        while let Some( cur_lin ) = current_line
         {
-            if current_line.unwrap().is_empty()
+            if cur_lin.is_empty()
             {
                 current_line = lines.next();
                 continue;
             }
 
             // parse mappings
-            let ( mut map, source ) = Map::new( current_line.unwrap() );
+            let ( mut map, source ) = Map::new( cur_lin );
 
             // parse map ranges
             current_line = lines.next();
 
-            while current_line.is_some()
+            while let Some( cur_lin ) = current_line
             {
-                if current_line.unwrap().is_empty()
+                if cur_lin.is_empty()
                 {
                     break;
                 }
 
-                map.map_ranges.push( MapRange::new( current_line.unwrap() ) );
+                map.map_ranges.push( MapRange::new( cur_lin ) );
                 current_line = lines.next();
             }
 
