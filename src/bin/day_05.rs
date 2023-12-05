@@ -1,10 +1,22 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
+
+struct Range
+{
+    start: usize,
+    len  : usize,
+}
 
 struct MapRange
 {
     start: usize,
     dest : usize,
     len  : usize,
+}
+
+struct MappedRange
+{
+    mapped  : Option< Range >,
+    unmapped: Option< Vec< Range > >,
 }
 
 impl MapRange
@@ -20,6 +32,64 @@ impl MapRange
         {
             None
         }
+    }
+
+    fn map_range( &self, range: Range ) -> MappedRange
+    {
+        // range is fully left or fully right of mapping range o
+        if range.start + range.len < self.start || range.start >= self.start + self.len
+        {
+            return MappedRange
+            {
+                mapped: None,
+                unmapped: Some( vec![ range ] ),
+            };
+        }
+        // range has left overlap with mapping range
+        else if range.start < self.start && range.start + range.len >= self.start && range.start + range.len < self.start + self.len 
+        {
+            return MappedRange
+            {
+                mapped: Some( Range{ start: self.map_number( self.start ).unwrap(), len: range.start + range.len - self.start } ),
+                unmapped: Some( vec![ Range{ start: range.start, len: self.start - range.start } ] ),
+            };  
+        }
+        // range is fully withing mapping range
+        else if range.start >= self.start && range.start + range.len < self.start + self.len
+        {
+            return MappedRange
+            {
+                mapped: Some( Range{ start: self.map_number( range.start ).unwrap(), len: range.len } ),
+                unmapped: None,
+            };
+        }
+        // range has right overlap with mapping range
+        else if range.start >= self.start && range.start < self.start + self.len && range.start + range.len >= self.start + self.len
+        {
+            return MappedRange
+            {
+                mapped: Some( Range{ start: self.map_number( range.start ).unwrap(), len: self.start + self.len - range.start } ),
+                unmapped: Some( vec![ Range{ start: self.start + self.len, len: range.start + range.len - self.start - self.len } ] ),
+            };
+        }
+        // range is larger than mapping range
+        else if range.start < self.start && range.start + range.len >= self.start + self.len
+        {
+            return MappedRange
+            {
+                mapped: Some( Range{ start: self.dest, len: self.len } ),
+                unmapped: Some
+                (
+                    vec!
+                    [
+                        Range{ start: range.start, len: self.start - range.start },
+                        Range{ start: self.start + self.len, len: range.start + range.len - self.start - self.len },
+                    ]
+                ),
+            };
+        }
+
+        panic!( "unhandled case!" );
     }
 
     fn new( line: &str ) -> MapRange
@@ -67,9 +137,9 @@ impl Map< '_ >
         for range in &self.map_ranges
         {
             let maybe_mapped = range.map_number( number );
-            if maybe_mapped.is_some()
+            if let Some( x ) = maybe_mapped
             {
-                return maybe_mapped.unwrap();
+                return x;
             }
         }
 
@@ -80,6 +150,44 @@ impl Map< '_ >
     {
         let number_mapper = | x: &usize | { self.map_number( *x ) };
         numbers.iter().map( number_mapper ).collect()
+    }
+
+    fn map_range( &self, range: Range ) -> Vec< Range >
+    {
+        let mut result: Vec< Range > = Vec::new();
+
+        let mut unmapped: VecDeque< Range > = VecDeque::new();
+        unmapped.push_back( range );
+
+        for map_range in &self.map_ranges
+        {
+            let mut new_unmapped: VecDeque< Range > = VecDeque::new();
+            while let Some( unmapped_range ) = unmapped.pop_front()
+            {
+                let mapped_range = map_range.map_range( unmapped_range );
+
+                if let Some( mapped_range ) = mapped_range.mapped
+                {
+                    result.push( mapped_range );
+                }
+                if let Some( unmapped_ranges ) = mapped_range.unmapped
+                {
+                    for unmapped_range in unmapped_ranges
+                    {
+                        new_unmapped.push_back( unmapped_range );
+                    }
+                }
+            }
+            unmapped = new_unmapped;
+        }
+        
+        // no mapping for those
+        for unmapped_range in unmapped
+        {
+            result.push( unmapped_range );
+        }
+
+        result 
     }
 }
 
@@ -150,7 +258,7 @@ fn main()
 
     // part 1
     let mut category = "seed";
-    let mut values   = puzzle_input.seeds;
+    let mut values   = puzzle_input.seeds.clone();
 
     while category != "location"
     {
@@ -163,4 +271,33 @@ fn main()
     let min_location = values.iter().min().unwrap();
 
     println!( "Part 1 minimum location is: {}", min_location );
+
+    // part 2
+    let mut ranges: Vec< Range > = puzzle_input.seeds.chunks_exact( 2 ).map
+    (
+        | chunk: &[usize] |
+        {
+            Range{ start: chunk[ 0 ], len: chunk[ 1 ] }
+        }
+    ).collect();
+    
+    let mut category = "seed";
+    while category != "location"
+    {
+        let category_mapping = &puzzle_input.mappings[ category ];
+
+        let mut new_ranges: Vec< Range > = Vec::new();
+
+        for range in ranges
+        {
+            new_ranges.extend( category_mapping.map_range( range ) );
+        }
+
+        category = category_mapping.destination;
+        ranges = new_ranges;
+    }
+
+    let min_location = ranges.iter().min_by( | x, y | { x.start.cmp( &y.start ) } ).unwrap().start;
+
+    println!( "Part 2 minimum location is: {}", min_location );
 }
