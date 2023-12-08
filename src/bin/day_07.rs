@@ -129,9 +129,9 @@ fn compare_hands( first: &Hand, second: &Hand ) -> Ordering
     let comparison = val_first.cmp( &val_second );
     if comparison == Ordering::Equal
     {
-        for ( f, s ) in first.cards.iter().zip( second.cards.iter() )
+        for ( &f, &s ) in first.cards.iter().zip( second.cards.iter() )
         {
-            let c = card_index( *f ).cmp( &card_index( *s ) );
+            let c = card_index( f ).cmp( &card_index( s ) );
             if c != Ordering::Equal { return c; }
         }
         return Ordering::Equal;
