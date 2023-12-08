@@ -1,6 +1,7 @@
 use core::panic;
 use std::cmp::Ordering;
 
+#[derive( PartialEq )]
 enum HandType
 {
     HighCard,
@@ -143,25 +144,43 @@ fn compare_hands( first: &Hand, second: &Hand ) -> Ordering
 
 fn compare_hands2( first: &Hand, second: &Hand ) -> Ordering
 {
-    let val_first  = first.hand_type.as_num() + first.num_jokers;
-    let val_second = second.hand_type.as_num() + second.num_jokers;
+    let value = | x: &Hand |
+    {
+        if x.num_jokers == 1 && x.hand_type == HandType::ThreeOfAKind
+        {
+            return HandType::FourOfAKind.as_num();
+        }
+        if x.num_jokers == 2 && x.hand_type == HandType::ThreeOfAKind
+        {
+            return HandType::FiveOfAKind.as_num();
+        }
+        if x.num_jokers == 2 && x.hand_type == HandType::TwoPair
+        {
+            return HandType::FourOfAKind.as_num();
+        }
+        if x.num_jokers == 1 && x.hand_type == HandType::TwoPair
+        {
+            return HandType::FullHouse.as_num();
+        }
+        if ( x.num_jokers == 1 || x.num_jokers == 2 ) && x.hand_type == HandType::OnePair
+        {
+            return HandType::ThreeOfAKind.as_num();
+        }
+        return std::cmp::min( HandType::FiveOfAKind.as_num(), x.hand_type.as_num() + x.num_jokers );
+    };
+    let val_first  = value( first );
+    let val_second = value( second );
 
     let comparison = val_first.cmp( &val_second );
     if comparison == Ordering::Equal
     {
-        // better is the one with less jokers
-        if first.num_jokers < second.num_jokers { return Ordering::Greater; }
-        else if first.num_jokers > second.num_jokers { return Ordering::Less; }
-        else
+        // same number of jokers, do the high-card, but treat J as the weakest
+        for ( f, s ) in first.cards.iter().zip( second.cards.iter() )
         {
-            // same number of jokers, do the high-card, but treat J as the weakest
-            for ( f, s ) in first.cards.iter().zip( second.cards.iter() )
-            {
-                let c = part2_card_index( *f ).cmp( &part2_card_index( *s ) );
-                if c != Ordering::Equal { return c; }
-            }
-            return Ordering::Equal;
+            let c = part2_card_index( *f ).cmp( &part2_card_index( *s ) );
+            if c != Ordering::Equal { return c; }
         }
+        return Ordering::Equal;
     }
     else
     {
@@ -196,6 +215,7 @@ fn main()
 
         for ( index, hand ) in hands.iter().enumerate()
         {
+            println!( "Rank {}, hand: {}", index + 1, hand.cards.iter().collect::< String >() );
             part_02_solution += ( index + 1 ) * hand.bid;
         }
 
