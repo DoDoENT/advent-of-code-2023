@@ -32,10 +32,10 @@ impl HandType
 
 struct Hand
 {
-    cards     : Vec< char >,
-    bid       : usize,
-    hand_type : HandType,
-    num_jokers: usize,
+    cards       : Vec< char >,
+    bid         : usize,
+    hand_type   : HandType,
+    num_jokers  : usize,
 }
 
 fn card_index( card: char ) -> usize
@@ -85,7 +85,7 @@ impl Hand
             4 => { HandType::FourOfAKind },
             3 =>
             {
-                if card_counts.iter().find( | &&x | x == 2 ).is_some()
+                if card_counts.iter().any( | &x | x == 2 )
                 {
                     HandType::FullHouse
                 }
@@ -102,7 +102,7 @@ impl Hand
                 }
                 else
                 {
-                    HandType::OnePair   
+                    HandType::OnePair
                 }
             },
             _ => { HandType::HighCard }
@@ -134,42 +134,53 @@ fn compare_hands( first: &Hand, second: &Hand ) -> Ordering
             let c = card_index( f ).cmp( &card_index( s ) );
             if c != Ordering::Equal { return c; }
         }
-        return Ordering::Equal;
+        Ordering::Equal
     }
     else
     {
-        return comparison;
+        comparison
+    }
+}
+
+fn hand_strength( x: &Hand ) -> usize
+{
+    match x.hand_type
+    {
+        HandType::FiveOfAKind => { x.hand_type.as_num() },
+        HandType::FourOfAKind =>
+        {
+            if x.num_jokers > 0 { HandType::FiveOfAKind.as_num() }
+            else                { HandType::FourOfAKind.as_num() }
+        },
+        HandType::FullHouse   =>
+        {
+            if x.num_jokers > 0 { HandType::FiveOfAKind.as_num() }
+            else                { x.hand_type.as_num()           }
+        },
+        HandType::ThreeOfAKind =>
+        {
+            if x.num_jokers == 3 || x.num_jokers == 1 { HandType::FourOfAKind .as_num() }
+            else                                      { HandType::ThreeOfAKind.as_num() }
+        },
+        HandType::TwoPair =>
+        {
+                 if x.num_jokers == 1 { HandType::FullHouse  .as_num() }
+            else if x.num_jokers == 2 { HandType::FourOfAKind.as_num() }
+            else                      { HandType::TwoPair    .as_num() }
+        },
+        HandType::OnePair =>
+        {
+            if x.num_jokers > 0 { HandType::ThreeOfAKind.as_num() }
+            else                { HandType::OnePair     .as_num() }
+        },
+        HandType::HighCard => { x.hand_type.as_num() + x.num_jokers }
     }
 }
 
 fn compare_hands2( first: &Hand, second: &Hand ) -> Ordering
 {
-    let value = | x: &Hand |
-    {
-        if x.num_jokers == 1 && x.hand_type == HandType::ThreeOfAKind
-        {
-            return HandType::FourOfAKind.as_num();
-        }
-        if x.num_jokers == 2 && x.hand_type == HandType::ThreeOfAKind
-        {
-            return HandType::FiveOfAKind.as_num();
-        }
-        if x.num_jokers == 2 && x.hand_type == HandType::TwoPair
-        {
-            return HandType::FourOfAKind.as_num();
-        }
-        if x.num_jokers == 1 && x.hand_type == HandType::TwoPair
-        {
-            return HandType::FullHouse.as_num();
-        }
-        if ( x.num_jokers == 1 || x.num_jokers == 2 ) && x.hand_type == HandType::OnePair
-        {
-            return HandType::ThreeOfAKind.as_num();
-        }
-        return std::cmp::min( HandType::FiveOfAKind.as_num(), x.hand_type.as_num() + x.num_jokers );
-    };
-    let val_first  = value( first );
-    let val_second = value( second );
+    let val_first  = hand_strength( first );
+    let val_second = hand_strength( second );
 
     let comparison = val_first.cmp( &val_second );
     if comparison == Ordering::Equal
@@ -180,12 +191,18 @@ fn compare_hands2( first: &Hand, second: &Hand ) -> Ordering
             let c = part2_card_index( *f ).cmp( &part2_card_index( *s ) );
             if c != Ordering::Equal { return c; }
         }
-        return Ordering::Equal;
+        Ordering::Equal
     }
     else
     {
-        return comparison;
+        comparison
     }
+}
+
+#[test]
+fn test_part2_comparisons()
+{
+    assert_eq!( compare_hands2( &parse_hand("J8888 11"), &parse_hand( "J9JAJ 99" ) ), Ordering::Greater );
 }
 
 fn main()
@@ -215,7 +232,7 @@ fn main()
 
         for ( index, hand ) in hands.iter().enumerate()
         {
-            println!( "Rank {}, hand: {}", index + 1, hand.cards.iter().collect::< String >() );
+            println!( "Rank {}, hand: {}, strength: {}", index + 1, hand.cards.iter().collect::< String >(), hand_strength( hand ) );
             part_02_solution += ( index + 1 ) * hand.bid;
         }
 
