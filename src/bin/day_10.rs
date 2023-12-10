@@ -146,9 +146,10 @@ impl Map
         }
     }
 
-    fn find_loop( &self ) -> Vec< Pos >
+    fn find_loop( &self ) -> Vec< ( Pos, Direction, Direction ) >
     {
-        let mut lp = vec![ self.start_pos ];
+        // let mut lp = vec![ self.start_pos ];
+        let mut lp: Vec< ( Pos, Direction, Direction ) > = Vec::new();
 
         let mut cur_pos = self.find_connection( self.start_pos, Direction::North );
 
@@ -157,10 +158,15 @@ impl Map
         while self.at_pos( cur_pos.0 ) != Some( 'S' )
         {
             // println!( "Gone {:?} to pos: ({}, {}), mark: {}", cur_pos.1, cur_pos.0.0, cur_pos.0.1, self.at_pos( cur_pos.0 ).unwrap() );
-            lp.push( cur_pos.0 );
 
-            cur_pos = self.find_connection( cur_pos.0, cur_pos.1 );
+            let new_pos = self.find_connection( cur_pos.0, cur_pos.1 );
+
+            lp.push( ( cur_pos.0, cur_pos.1, new_pos.1 ) );
+
+            cur_pos = new_pos;
         }
+
+        lp.push( ( cur_pos.0, cur_pos.1, lp.first().unwrap().1 ) );
 
         lp
     }
@@ -185,45 +191,30 @@ fn main()
 
     let is_on_loop = | pos: Pos |
     {
-        lp.iter().find(| x | { x.0 == pos.0 && x.1 == pos.1 })
+        lp.iter().find(| x | { x.0.0 == pos.0 && x.0.1 == pos.1 })
     };
 
-    let mut is_inside        = false;
-    // let mut was_on_border    = false;
     let mut num_tiles_inside = 0usize;
 
     for row in 0 .. map.height
     {
+        let mut is_inside = false;
         for col in 0 .. map.width
         {
             let cur_pos = Pos( row as i64, col as i64 );
             if let Some( x ) = is_on_loop( cur_pos ) // loop border
             {
-                println!( "Pos ({}, {}) is on loop", x.0, x.1 );
-                // if vertical border, toggle whether we are inside or outside
-                let mark = map.at_pos( cur_pos ).unwrap();
-                if is_inside
+                // println!( "Pos ({}, {}) is on loop, heading {:?} -> {:?}", x.0.0, x.0.1, x.1, x.2 );
+                // if connected below, then toggle
+                if x.1 == Direction::North || x.2 == Direction::South
                 {
-                    // if right border, get outside
-                    if mark == 'S' || mark == '7' || mark == '|' || mark == 'J'
-                    {
-                        is_inside = false;
-                        println!( "exited" );
-                    }
-                }
-                else
-                {
-                    // if left border, get inside
-                    if mark == 'S' || mark == 'F' || mark == '|' || mark == 'L'
-                    {
-                        is_inside = true;
-                        println!( "entered" );
-                    }
+                    is_inside = !is_inside;
+                    // println!( "toggled" );
                 }
             }
             else if is_inside
             {
-                println!( "Pos ({}, {}), mark: {} is inside!", cur_pos.0, cur_pos.1, map.at_pos( cur_pos ).unwrap() );
+                // println!( "Pos ({}, {}), mark: {} is inside!", cur_pos.0, cur_pos.1, map.at_pos( cur_pos ).unwrap() );
                 num_tiles_inside += 1;
             }
         }
