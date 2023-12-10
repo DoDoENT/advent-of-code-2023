@@ -9,7 +9,7 @@ struct Map
     start_pos: Pos,
 }
 
-#[ derive( PartialEq, Debug ) ]
+#[ derive( PartialEq, Debug, Copy, Clone ) ]
 enum Direction
 {
     North,
@@ -178,5 +178,57 @@ fn main()
     let part_01_solution = lp.len() / 2;
 
     println!( "Part 01 solution: {}", part_01_solution );
+
+    //------------------------------------------------------------------------------
+    // Part 02
+    //------------------------------------------------------------------------------
+
+    let is_on_loop = | pos: Pos |
+    {
+        lp.iter().find(| x | { x.0 == pos.0 && x.1 == pos.1 })
+    };
+
+    let mut is_inside        = false;
+    // let mut was_on_border    = false;
+    let mut num_tiles_inside = 0usize;
+
+    for row in 0 .. map.height
+    {
+        for col in 0 .. map.width
+        {
+            let cur_pos = Pos( row as i64, col as i64 );
+            if let Some( x ) = is_on_loop( cur_pos ) // loop border
+            {
+                println!( "Pos ({}, {}) is on loop", x.0, x.1 );
+                // if vertical border, toggle whether we are inside or outside
+                let mark = map.at_pos( cur_pos ).unwrap();
+                if is_inside
+                {
+                    // if right border, get outside
+                    if mark == 'S' || mark == '7' || mark == '|' || mark == 'J'
+                    {
+                        is_inside = false;
+                        println!( "exited" );
+                    }
+                }
+                else
+                {
+                    // if left border, get inside
+                    if mark == 'S' || mark == 'F' || mark == '|' || mark == 'L'
+                    {
+                        is_inside = true;
+                        println!( "entered" );
+                    }
+                }
+            }
+            else if is_inside
+            {
+                println!( "Pos ({}, {}), mark: {} is inside!", cur_pos.0, cur_pos.1, map.at_pos( cur_pos ).unwrap() );
+                num_tiles_inside += 1;
+            }
+        }
+    }
+
+    println!( "Num tiles inside: {}", num_tiles_inside );
 }
 
