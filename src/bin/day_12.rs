@@ -17,15 +17,25 @@ struct State
     runchain   : Vec< usize >,
 }
 
+struct NoMoreBlocks;
+
 impl State
 {
-    fn next_block( &mut self )
+    fn next_block( &mut self ) -> Result< (), NoMoreBlocks >
     {
-        // avoid twice growing in case next_block is called
-        // consecutive (i.e. in "..." case)
-        if self.runchain[ self.chain_index ] != 0
+        if self.chain_index < self.runchain.len() - 1
         {
-            self.chain_index += 1;
+            // avoid twice growing in case next_block is called
+            // consecutive (i.e. in "..." case)
+            if self.runchain[ self.chain_index ] != 0
+            {
+                self.chain_index += 1;
+            }
+            Ok( () )
+        }
+        else
+        {
+            Err( NoMoreBlocks )
         }
     }
 
@@ -41,7 +51,13 @@ impl State
 
     fn impossible( &self, expected: &Vec< usize > ) -> bool
     {
-        self.chain_index < self.runchain.len() && self.runchain[ self.chain_index ] > expected[ self.chain_index ]
+        let mut prev_match = true;
+        if self.chain_index > 0
+        {
+            prev_match = self.runchain[ self.chain_index - 1 ] == expected[ self.chain_index - 1 ];
+        }
+
+        !prev_match || ( self.chain_index < self.runchain.len() && self.runchain[ self.chain_index ] > expected[ self.chain_index ] )
     }
 
     fn is_solution( &self, expected: &Vec< usize > ) -> bool
@@ -69,7 +85,7 @@ fn solve_line( line: &str ) -> usize
         {
             if c == '.'
             {
-                current_state.next_block();
+                let _ = current_state.next_block();
             }
             else if c == '#'
             {
@@ -81,7 +97,6 @@ fn solve_line( line: &str ) -> usize
                 // assume ? is #
                 current_state.grow_block();
             }
-
 
             if current_state.is_solution( &expected_runchain )
             {
@@ -114,19 +129,20 @@ fn solve_line( line: &str ) -> usize
             while let Some( state ) = backtrack_list.pop()
             {
                 current_state = state;
-                current_state.next_block(); // assume ? is .
-                current_state.next_char(); // advance to next char
-                if current_state.is_solution( &expected_runchain )
+                if let Ok( _ ) = current_state.next_block() // assume ? is .
                 {
-                    valid_combinations += 1;
+                    current_state.next_char(); // advance to next char
+                    if current_state.is_solution( &expected_runchain )
+                    {
+                        valid_combinations += 1;
+                    }
+                    if !current_state.impossible( &expected_runchain )
+                    {
+                        // break the drain loop and continue from backtraced state
+                        done = false;
+                        break;
+                    }
                 }
-                if !current_state.impossible( &expected_runchain )
-                {
-                    // break the drain loop and continue from backtraced state
-                    done = false;
-                    break;
-                }
-
             }
         }
     }
@@ -140,6 +156,9 @@ fn test_part1_solutions()
     assert_eq!( 1, solve_line( "???.### 1,1,3" ) );
     assert_eq!( 4, solve_line( ".??..??...?##. 1,1,3" ) );
     assert_eq!( 1, solve_line( "?#?#?#?#?#?#?#? 1,3,1,6" ) );
+    assert_eq!( 1, solve_line( "????.#...#... 4,1,1" ) );
+    assert_eq!( 4, solve_line( "????.######..#####. 1,6,5" ) );
+    assert_eq!( 10, solve_line( "?###???????? 3,2,1" ) );
 }
 
 fn main()
