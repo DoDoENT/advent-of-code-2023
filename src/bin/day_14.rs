@@ -1,6 +1,6 @@
-use std::u8;
+use std::{u8, collections::HashMap};
 
-#[ derive( Clone, Eq, PartialEq ) ]
+#[ derive( Clone, Eq, PartialEq, Hash ) ]
 struct Platform
 {
     data: Vec< u8 >,
@@ -204,34 +204,59 @@ fn main()
     platform.tilt_south();
     platform.tilt_east();
 
-    println!( "After first cycle: " );
-    platform.print();
-
     let start_time = std::time::Instant::now();
 
-    const CYCLES: usize = 100000;
+    let mut seen_states: HashMap< Platform, usize > = HashMap::new();
 
-    let mut total_cycles = 1usize;
-    for _ in 0 .. CYCLES - 1
+    const CYCLES: usize = 1000000000;
+
+    let mut period = 0usize;
+    let mut brute_forced_cycles = 0usize;
+
+    for cycle in 1 .. CYCLES
     {
-        let before = platform.clone();
+        seen_states.insert( platform.clone(), cycle );
+
+        // println!( "After cycle {}", cycle );
+        // platform.print();
+        // println!( "North load: {}", platform.north_load() );
 
         platform.tilt_north();
         platform.tilt_west();
         platform.tilt_south();
         platform.tilt_east();
 
-        total_cycles += 1;
-
-        if platform == before
+        if let Some( prev_cycle ) = seen_states.get( &platform )
         {
+            println!( "After cycle {}, found same state as after cycle {}", cycle + 1, prev_cycle );
+
+            period = cycle + 1 - prev_cycle;
+            brute_forced_cycles = cycle + 1;
+
+            println!( "Period is {}", period );
+
             break;
         }
     }
 
-    println!( "After {} cycles:", total_cycles );
-    platform.print();
+    let leftover_cycles = CYCLES - brute_forced_cycles;
+
+    let leftover_iterations = leftover_cycles % period;
+
+    for _ in 0 .. leftover_iterations
+    {
+        platform.tilt_north();
+        platform.tilt_west();
+        platform.tilt_south();
+        platform.tilt_east();
+    }
 
     let elapsed_time = start_time.elapsed();
-    println!( "{:?} cycles elapsed time: {:?}", total_cycles, elapsed_time );
+    println!( "Elapsed time: {:?}", elapsed_time );
+
+    println!( "After {} leftover cycles and {} leftover iterations:", leftover_cycles, leftover_iterations );
+    // println!( "After all {} cycles", CYCLES );
+    // platform.print();
+
+    println!( "Part 02 north load: {}", platform.north_load() );
 }
