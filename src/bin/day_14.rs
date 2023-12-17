@@ -1,5 +1,6 @@
 use std::u8;
 
+#[ derive( Clone, Eq, PartialEq ) ]
 struct Platform
 {
     data: Vec< u8 >,
@@ -85,6 +86,87 @@ impl Platform
         }
     }
 
+    fn tilt_south( &mut self )
+    {
+        for col in 0 .. self.width
+        {
+            for row in ( 0 .. self.height ).rev()
+            {
+                if *self.at( row, col ) == 'O' as u8
+                {
+                    let mut dest_row = row + 1;
+                    while dest_row < self.height && *self.at( dest_row as usize, col ) == '.' as u8
+                    {
+                        dest_row += 1;
+                    }
+                    // correct for one-off
+                    dest_row -= 1;
+                    if dest_row as usize != row
+                    {
+                        // ...mrmlj... borrow checker does not allow this
+                        // std::mem::swap( self.mut_at( dest_row as usize, col ), self.mut_at( row, col ) );
+
+                        let tmp = *self.at( dest_row as usize, col );
+                        *self.mut_at( dest_row as usize, col ) = *self.at( row, col );
+                        *self.mut_at( row              , col ) = tmp;
+                    }
+                }
+            }
+        }
+    }
+
+    fn tilt_west( &mut self )
+    {
+        for row in 0 .. self.height
+        {
+            for col in 0 .. self.width
+            {
+                if *self.at( row, col ) == 'O' as u8
+                {
+                    let mut dest_col = col as isize - 1;
+                    while dest_col >= 0 && *self.at( row, dest_col as usize ) == '.' as u8
+                    {
+                        dest_col -= 1;
+                    }
+                    // correct for one-off
+                    dest_col += 1;
+                    if dest_col as usize != col
+                    {
+                        let tmp = *self.at( row, dest_col as usize );
+                        *self.mut_at( row, dest_col as usize ) = *self.at( row, col );
+                        *self.mut_at( row, col               ) = tmp;
+                    }
+                }
+            }
+        }
+    }
+
+    fn tilt_east( &mut self )
+    {
+        for row in 0 .. self.height
+        {
+            for col in ( 0 .. self.width ).rev()
+            {
+                if *self.at( row, col ) == 'O' as u8
+                {
+                    let mut dest_col = col + 1;
+                    while dest_col < self.width && *self.at( row, dest_col as usize ) == '.' as u8
+                    {
+                        dest_col += 1;
+                    }
+                    // correct for one-off
+                    dest_col -= 1;
+                    if dest_col as usize != col
+                    {
+                        let tmp = *self.at( row, dest_col as usize );
+                        *self.mut_at( row, dest_col as usize ) = *self.at( row, col );
+                        *self.mut_at( row, col               ) = tmp;
+                    }
+                }
+            }
+        }
+    }
+
     fn north_load( &self ) -> usize
     {
         let mut load = 0usize;
@@ -113,11 +195,43 @@ fn main()
 
     let mut platform = Platform::new( &input );
 
-    println!( "Tilted: " );
-
     platform.tilt_north();
 
+    println!( "Part 01 north load: {}", platform.north_load() );
+
+    // rest of first cycle
+    platform.tilt_west();
+    platform.tilt_south();
+    platform.tilt_east();
+
+    println!( "After first cycle: " );
     platform.print();
 
-    println!( "Part 01 north load: {}", platform.north_load() );
+    let start_time = std::time::Instant::now();
+
+    const CYCLES: usize = 100000;
+
+    let mut total_cycles = 1usize;
+    for _ in 0 .. CYCLES - 1
+    {
+        let before = platform.clone();
+
+        platform.tilt_north();
+        platform.tilt_west();
+        platform.tilt_south();
+        platform.tilt_east();
+
+        total_cycles += 1;
+
+        if platform == before
+        {
+            break;
+        }
+    }
+
+    println!( "After {} cycles:", total_cycles );
+    platform.print();
+
+    let elapsed_time = start_time.elapsed();
+    println!( "{:?} cycles elapsed time: {:?}", total_cycles, elapsed_time );
 }
