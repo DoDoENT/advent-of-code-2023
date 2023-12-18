@@ -101,7 +101,7 @@ impl Beam
     }
 }
 
-fn solve_part_01( tiles: &Matrix< u8 > ) -> usize
+fn energize( tiles: &Matrix< u8 >, start_beam: Beam ) -> usize
 {
     let mut energized_tiles: Matrix< bool > = Matrix::new
     (
@@ -110,7 +110,7 @@ fn solve_part_01( tiles: &Matrix< u8 > ) -> usize
         false,
     );
 
-    let mut beams = vec![ Beam{ row: 0, col: 0, dir: Direction::Right } ];
+    let mut beams = vec![ start_beam ];
 
     let mut seen_positions: HashSet< Beam > = HashSet::new();
 
@@ -211,5 +211,27 @@ fn main()
         tiles.height += 1;
     }
 
-    println!( "Part 01: {}", solve_part_01( &tiles ) );
+    println!( "Part 01: {}", energize( &tiles, Beam{ row: 0, col: 0, dir: Direction::Right } ) );
+
+    let mut best_energy = 0usize;
+
+    for col in 0 .. tiles.width
+    {
+        let e = energize( &tiles, Beam{ row: 0, col: col as isize, dir: Direction::Down } );
+        best_energy = std::cmp::max( e, best_energy );
+
+        let e = energize( &tiles, Beam{ row: tiles.height as isize - 1, col: col as isize, dir: Direction::Up } );
+        best_energy = std::cmp::max( e, best_energy );
+    }
+
+    for row in 0 .. tiles.height
+    {
+        let e = energize( &tiles, Beam{ row: row as isize, col: 0, dir: Direction::Right } );
+        best_energy = std::cmp::max( e, best_energy );
+
+        let e = energize( &tiles, Beam{ row: row as isize, col: tiles.width as isize - 1, dir: Direction::Left } );
+        best_energy = std::cmp::max( e, best_energy );
+    }
+
+    println!( "Part 02: {}", best_energy );
 }
