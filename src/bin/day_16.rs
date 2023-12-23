@@ -1,5 +1,6 @@
 use std::collections::HashSet;
 
+use utils::matrix;
 use utils::matrix::Matrix;
 
 #[ derive( Copy, Clone, PartialEq, Eq, Hash ) ]
@@ -152,19 +153,7 @@ fn main()
     let file_path = std::env::args().nth( 1 ).unwrap();
     let input     = std::fs::read_to_string( file_path ).expect( "Failed to read file" );
 
-    let mut tiles: Matrix< u8 > = Matrix
-    {
-        data: Vec::new(),
-        width: 0,
-        height: 0,
-    };
-
-    for line in input.lines()
-    {
-        tiles.data.extend( line.as_bytes() );
-        tiles.width = line.len();
-        tiles.height += 1;
-    }
+    let tiles = matrix::from_str_input( &input );
 
     println!( "Part 01: {}", energize( &tiles, Beam{ row: 0, col: 0, dir: Direction::Right } ) );
 

@@ -1,4 +1,4 @@
-use std::{collections::HashMap, str::Chars, iter::once};
+use std::{collections::HashMap, str::Chars};
 
 use num_integer::lcm;
 

@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::fmt::Debug;
 
 use transpose::transpose;
 
@@ -10,7 +10,7 @@ pub struct Matrix< T >
     pub height: usize,
 }
 
-impl< T > Matrix< T > where T: Clone + Copy + Display
+impl< T > Matrix< T > where T: Clone + Copy + Debug
 {
     pub fn new( width: usize, height: usize, fill: T ) -> Matrix< T >
     {
@@ -52,7 +52,7 @@ impl< T > Matrix< T > where T: Clone + Copy + Display
         {
             for col in 0 .. self.width
             {
-                print!( "{} ", self.at( row, col ) );
+                print!( "{:?} ", self.at( row, col ) );
             }
             println!();
         }
@@ -76,4 +76,23 @@ impl< T > Matrix< T > where T: Clone + Copy + Display
             height: self.width,
         }
     }
+}
+
+pub fn from_str_input( input: &str ) -> Matrix< u8 >
+{
+    let mut mat: Matrix< u8 > = Matrix
+    {
+        data: Vec::new(),
+        width: 0,
+        height: 0,
+    };
+
+    for line in input.lines()
+    {
+        mat.data.extend( line.as_bytes() );
+        mat.width = line.len();
+        mat.height += 1;
+    }
+
+    mat
 }
