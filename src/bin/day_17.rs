@@ -217,6 +217,7 @@ fn draw_result( city_map: &Matrix< u8 >, path: &[ Pos ] )
 
 fn min_path( city_map: &Matrix< u8 >, min_steps: usize, max_steps: usize ) -> Option< usize >
 {
+    // astar from pathfinding package
     let result = astar
     (
         &Pos { row: 0, col: 0, num_steps_in_same_direction: 0, direction: Direction::Up },
