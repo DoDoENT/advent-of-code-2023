@@ -78,6 +78,36 @@ impl< T > Matrix< T > where T: Clone + Copy + Debug
     }
 }
 
+impl Matrix< u8 >
+{
+    pub fn print_chars( &self )
+    {
+        for row in 0 .. self.height
+        {
+            for col in 0 .. self.width
+            {
+                print!( "{}", *self.at( row, col ) as char );
+            }
+            println!();
+        }
+    }
+}
+
+impl Matrix< char >
+{
+    pub fn print_chars( &self )
+    {
+        for row in 0 .. self.height
+        {
+            for col in 0 .. self.width
+            {
+                print!( "{}", self.at( row, col ) );
+            }
+            println!();
+        }
+    }
+}
+
 pub fn from_str_input( input: &str ) -> Matrix< u8 >
 {
     let mut mat: Matrix< u8 > = Matrix
