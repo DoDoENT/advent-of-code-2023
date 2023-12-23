@@ -93,6 +93,7 @@ impl Matrix< u8 >
     }
 }
 
+// TODO: how to de-duplicate that?
 impl Matrix< char >
 {
     pub fn print_chars( &self )
