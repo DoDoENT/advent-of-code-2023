@@ -1,51 +1,6 @@
-use std::fmt::Display;
 use std::collections::HashSet;
 
-#[ derive( Clone ) ]
-struct Matrix< T >
-{
-    data: Vec< T >,
-    width: usize,
-    height: usize,
-}
-
-impl< T > Matrix< T > where T: Clone + Copy + Display
-{
-    fn new( width: usize, height: usize, fill: T ) -> Matrix< T >
-    {
-        Matrix
-        {
-            data: vec![ fill; height * width ],
-            width,
-            height
-        }
-    }
-
-    fn at( &self, row: usize, col: usize ) -> &T
-    {
-        let index = row * self.width + col;
-        return &self.data[ index ];
-    }
-
-    fn mut_at( &mut self, row: usize, col: usize ) -> &mut T
-    {
-        let index = row * self.width + col;
-        return &mut self.data[ index ];
-    }
-
-    #[allow(dead_code)]
-    fn print( &self )
-    {
-        for row in 0 .. self.height
-        {
-            for col in 0 .. self.width
-            {
-                print!( "{} ", self.at( row, col ) );
-            }
-            println!();
-        }
-    }
-}
+use utils::matrix::Matrix;
 
 #[ derive( Copy, Clone, PartialEq, Eq, Hash ) ]
 #[ repr( u8 )]

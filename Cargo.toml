@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "utils"
+path = "src/lib/utils/mod.rs"
 
 [dependencies]
 num-integer = "^0.1"
@@ -14,3 +17,4 @@ panic = "abort"
 opt-level = "s"
 strip = "symbols"
 lto = "thin"
+
