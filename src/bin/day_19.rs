@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{ HashMap, VecDeque };
 
 #[ derive( Debug ) ]
 struct Part
@@ -17,6 +17,59 @@ impl Part
     }
 }
 
+#[ derive( Debug, Clone, Copy ) ]
+struct Parts
+{
+    x: ( isize, isize ),
+    m: ( isize, isize ),
+    a: ( isize, isize ),
+    s: ( isize, isize ),
+}
+
+impl Parts
+{
+    fn split_x( &self, operator: char, compare: isize ) -> ( Parts, Parts )
+    {
+        let splitted = split_interval( operator, compare, self.x );
+        (
+            Parts{ x: splitted.0, m: self.m, a: self.a, s: self.s },
+            Parts{ x: splitted.1, m: self.m, a: self.a, s: self.s },
+        )
+    }
+
+    fn split_m( &self, operator: char, compare: isize ) -> ( Parts, Parts )
+    {
+        let splitted = split_interval( operator, compare, self.m );
+        (
+            Parts{ x: self.x, m: splitted.0, a: self.a, s: self.s },
+            Parts{ x: self.x, m: splitted.1, a: self.a, s: self.s },
+        )
+    }
+
+    fn split_a( &self, operator: char, compare: isize ) -> ( Parts, Parts )
+    {
+        let splitted = split_interval( operator, compare, self.a );
+        (
+            Parts{ x: self.x, m: self.m, a: splitted.0, s: self.s },
+            Parts{ x: self.x, m: self.m, a: splitted.1, s: self.s },
+        )
+    }
+
+    fn split_s( &self, operator: char, compare: isize ) -> ( Parts, Parts )
+    {
+        let splitted = split_interval( operator, compare, self.s );
+        (
+            Parts{ x: self.x, m: self.m, a: self.a, s: splitted.0 },
+            Parts{ x: self.x, m: self.m, a: self.a, s: splitted.1 },
+        )
+    }
+
+    fn num_combinations( &self ) -> isize
+    {
+        ( self.x.1 - self.x.0 + 1 ) * ( self.m.1 - self.m.0 + 1 ) * ( self.a.1 - self.a.0 + 1 ) * ( self.s.1 - self.s.0 + 1 )
+    }
+}
+
 #[ derive( Debug ) ]
 struct Rule< 'a >
 {
@@ -30,6 +83,18 @@ fn condition_satisfied( operator: char, compare: isize, value: isize ) -> bool
     {
         '<' => { value < compare },
         '>' => { value > compare },
+        _   => { panic!( "Unknown operator!" ); }
+    }
+}
+
+// first element of the result tuple satisfies condition, second does not
+fn split_interval( operator: char, compare: isize, value: ( isize, isize ) ) -> ( ( isize, isize ), ( isize, isize ) )
+{
+    assert!( compare >= value.0 && compare <= value.1 );
+    match operator
+    {
+        '<' => { ( ( value.0, compare - 1 ), ( compare, value.1 ) ) },
+        '>' => { ( ( compare + 1, value.1 ), ( value.0, compare ) ) },
         _   => { panic!( "Unknown operator!" ); }
     }
 }
@@ -65,6 +130,31 @@ impl Rule< '_ >
         else
         {
             Some( self.destination )
+        }
+    }
+
+    fn apply_multiple( &self, parts: Parts ) -> ( ( &str, Parts ), Option< Parts > )
+    {
+        if let Some( condition ) = self.condition
+        {
+            let compare: isize = condition[ 2 .. ].parse().unwrap();
+            let property = condition.chars().nth( 0 ).unwrap();
+            let operator = condition.chars().nth( 1 ).unwrap();
+
+            let ( applied, non_applied ) = match property
+            {
+                'x' => parts.split_x( operator, compare ),
+                'm' => parts.split_m( operator, compare ),
+                'a' => parts.split_a( operator, compare ),
+                's' => parts.split_s( operator, compare ),
+                _ => { panic!( "Unknown category!" ); }
+            };
+
+            ( ( self.destination, applied ), Some( non_applied ) )
+        }
+        else
+        {
+            ( ( self.destination, parts ), None )
         }
     }
 }
@@ -160,6 +250,50 @@ fn solve_part01( parts: &[ Part ], workflows: &HashMap< &str, Vec< Rule > > )
     println!( "Part 01: {}", ratings_sum );
 }
 
+fn solve_part02( workflows: &HashMap< &str, Vec< Rule > > )
+{
+    let mut total_accepted = 0isize;
+
+    let all_parts = Parts
+    {
+        x: ( 1, 4000 ),
+        m: ( 1, 4000 ),
+        a: ( 1, 4000 ),
+        s: ( 1, 4000 ),
+    };
+
+    let mut process_queue: VecDeque< ( &str, Parts ) > = VecDeque::new();
+    process_queue.push_back( ( "in", all_parts ) );
+
+    while let Some( task ) = process_queue.pop_front()
+    {
+        let     workflow = &workflows[ task.0 ];
+        let mut parts    = task.1;
+
+        for rule in workflow
+        {
+            let ( applied, rest ) = rule.apply_multiple( parts );
+
+            if let Some( pts ) = rest
+            {
+                parts = pts;
+            }
+
+            match applied.0
+            {
+                "A" => total_accepted += applied.1.num_combinations(),
+                "R" => {},
+                next_workflow =>
+                {
+                    process_queue.push_back( ( next_workflow, applied.1 ) );
+                }
+            }
+        }
+    }
+
+    println!( "Total combinations accepted: {}", total_accepted );
+}
+
 fn main()
 {
     let file_path = std::env::args().nth( 1 ).unwrap();
@@ -193,4 +327,5 @@ fn main()
     }
 
     solve_part01( &parts, &workflows );
+    solve_part02( &workflows );
 }
