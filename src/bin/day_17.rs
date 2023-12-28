@@ -1,5 +1,5 @@
 use utils::matrix;
-use utils::matrix::Matrix;
+use utils::matrix::{MatrixTrait, Matrix};
 
 use pathfinding::directed::astar::astar;
 
@@ -211,7 +211,7 @@ fn draw_result( city_map: &Matrix< u8 >, path: &[ Pos ] )
         }
     }
 
-    render_map.print_chars();
+    render_map.print();
 
 }
 

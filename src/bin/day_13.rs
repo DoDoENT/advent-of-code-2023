@@ -1,4 +1,4 @@
-use utils::matrix::Matrix;
+use utils::matrix::{MatrixTrait, Matrix};
 
 fn find_similar_rows( pattern: &Matrix< u8 > ) -> Matrix< bool >
 {

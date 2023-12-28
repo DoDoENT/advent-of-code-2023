@@ -10,6 +10,28 @@ pub struct Matrix< T >
     pub height: usize,
 }
 
+pub trait MatrixTrait
+{
+    type Element: Debug + Copy + Clone;
+
+    fn at( &self, row: usize, col: usize ) -> &Self::Element;
+
+    fn height( &self ) -> usize;
+    fn width ( &self ) -> usize;
+
+    fn print( &self )
+    {
+        for row in 0 .. self.height()
+        {
+            for col in 0 .. self.width()
+            {
+                print!( "{:?} ", self.at( row, col ) );
+            }
+            println!();
+        }
+    }
+}
+
 impl< T > Matrix< T > where T: Clone + Copy + Debug
 {
     pub fn new( width: usize, height: usize, fill: T ) -> Matrix< T >
@@ -29,12 +51,6 @@ impl< T > Matrix< T > where T: Clone + Copy + Debug
         self.height = 0;
     }
 
-    pub fn at( &self, row: usize, col: usize ) -> &T
-    {
-        let index = row * self.width + col;
-        return &self.data[ index ];
-    }
-
     pub fn mut_at( &mut self, row: usize, col: usize ) -> &mut T
     {
         let index = row * self.width + col;
@@ -44,18 +60,6 @@ impl< T > Matrix< T > where T: Clone + Copy + Debug
     pub fn row( &self, row: usize ) -> &[ T ]
     {
         &self.data[ ( row * self.width ) .. ( ( row + 1 ) * self.width ) ]
-    }
-
-    pub fn print( &self )
-    {
-        for row in 0 .. self.height
-        {
-            for col in 0 .. self.width
-            {
-                print!( "{:?} ", self.at( row, col ) );
-            }
-            println!();
-        }
     }
 
     pub fn transposed( &self ) -> Matrix< T >
@@ -78,9 +82,29 @@ impl< T > Matrix< T > where T: Clone + Copy + Debug
     }
 }
 
+impl< T > MatrixTrait for Matrix< T > where T: Clone + Copy + Debug
+{
+    type Element = T;
+
+    fn at( &self, row: usize, col: usize ) -> &T
+    {
+        let index = row * self.width + col;
+        &self.data[ index ]
+    }
+
+    fn height( &self ) -> usize {
+        self.height
+    }
+
+    fn width ( &self ) -> usize {
+        self.width
+    }
+
+}
+
 impl< C > Matrix< C > where C: Into< char > + Clone + Copy + Debug
 {
-    pub fn print_chars( &self )
+    pub fn print( &self )
     {
         for row in 0 .. self.height
         {

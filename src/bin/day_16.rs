@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use utils::matrix;
-use utils::matrix::Matrix;
+use utils::matrix::{MatrixTrait, Matrix};
 
 #[ derive( Copy, Clone, PartialEq, Eq, Hash ) ]
 #[ repr( u8 )]
