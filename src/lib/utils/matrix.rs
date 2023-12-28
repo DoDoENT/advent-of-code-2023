@@ -78,7 +78,7 @@ impl< T > Matrix< T > where T: Clone + Copy + Debug
     }
 }
 
-impl Matrix< u8 >
+impl< C > Matrix< C > where C: Into< char > + Clone + Copy + Debug
 {
     pub fn print_chars( &self )
     {
@@ -86,23 +86,8 @@ impl Matrix< u8 >
         {
             for col in 0 .. self.width
             {
-                print!( "{}", *self.at( row, col ) as char );
-            }
-            println!();
-        }
-    }
-}
-
-// TODO: how to de-duplicate that?
-impl Matrix< char >
-{
-    pub fn print_chars( &self )
-    {
-        for row in 0 .. self.height
-        {
-            for col in 0 .. self.width
-            {
-                print!( "{}", self.at( row, col ) );
+                let c: char = ( *self.at( row, col ) ).into();
+                print!( "{}", c );
             }
             println!();
         }
